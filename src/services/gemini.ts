@@ -6,7 +6,15 @@
 import { GoogleGenAI, Type, ThinkingLevel } from "@google/genai";
 import { Match, Prediction } from "../types";
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
+const getApiKey = () => {
+  try {
+    return process.env.GEMINI_API_KEY || "";
+  } catch {
+    return "";
+  }
+};
+
+const ai = new GoogleGenAI({ apiKey: getApiKey() });
 
 export const analyzeMatch = async (match: Match): Promise<Prediction> => {
   const formatPlayers = (players?: any[]) => 

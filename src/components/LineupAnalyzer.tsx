@@ -7,7 +7,15 @@ import React, { useState } from 'react';
 import { GoogleGenAI } from "@google/genai";
 import { Camera, Upload, Loader2, Sparkles } from 'lucide-react';
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
+const getApiKey = () => {
+  try {
+    return process.env.GEMINI_API_KEY || "";
+  } catch {
+    return "";
+  }
+};
+
+const ai = new GoogleGenAI({ apiKey: getApiKey() });
 
 export const LineupAnalyzer: React.FC = () => {
   const [image, setImage] = useState<string | null>(null);

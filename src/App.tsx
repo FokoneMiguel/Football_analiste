@@ -17,20 +17,57 @@ import { auth, db, signIn, signOut } from './firebase';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { doc, setDoc, getDoc, collection, query, where, getDocs, onSnapshot, getDocFromServer } from 'firebase/firestore';
 
-class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean }> {
+class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean, error: any }> {
   constructor(props: any) {
     super(props);
-    this.state = { hasError: false };
+    this.state = { hasError: false, error: null };
   }
-  static getDerivedStateFromError() { return { hasError: true }; }
+  
+  static getDerivedStateFromError(error: any) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: any, errorInfo: any) {
+    console.error("Uncaught error:", error, errorInfo);
+  }
+
   render() {
     if (this.state.hasError) {
+      const errorMessage = this.state.error?.message || String(this.state.error);
+      const errorStack = this.state.error?.stack;
+
       return (
-        <div className="min-h-screen bg-[#0A0A0B] flex items-center justify-center p-8">
-          <div className="bg-[#151619] border border-red-500/20 p-8 rounded-2xl text-center max-w-md">
-            <h2 className="text-xl font-bold text-white mb-4">Something went wrong</h2>
-            <p className="text-[#8E9299] text-sm mb-6">The application encountered an unexpected error. Please try refreshing the page.</p>
-            <button onClick={() => window.location.reload()} className="px-6 py-2 bg-[#F27D26] text-white rounded-lg font-bold">Reload App</button>
+        <div className="min-h-screen bg-[#0A0A0B] flex items-center justify-center p-4">
+          <div className="bg-[#151619] border border-red-500/20 p-8 rounded-2xl text-center max-w-2xl w-full shadow-2xl">
+            <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
+              <BrainCircuit className="text-red-500 w-8 h-8" />
+            </div>
+            <h2 className="text-2xl font-bold text-white mb-2">System Interruption</h2>
+            <p className="text-[#8E9299] text-sm mb-6">The analytics engine encountered a critical error. Diagnostics below:</p>
+            
+            <div className="bg-black/40 rounded-xl p-4 mb-8 text-left overflow-hidden">
+              <p className="text-red-400 font-mono text-xs mb-2 break-all font-bold">Error: {errorMessage}</p>
+              {errorStack && (
+                <pre className="text-[10px] text-[#5A5E66] font-mono overflow-auto max-h-32 leading-relaxed">
+                  {errorStack}
+                </pre>
+              )}
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <button 
+                onClick={() => window.location.reload()} 
+                className="px-8 py-3 bg-[#F27D26] text-white rounded-xl font-bold hover:bg-[#d96a1a] transition-colors shadow-lg shadow-[#F27D26]/20"
+              >
+                Restart Engine
+              </button>
+              <button 
+                onClick={() => window.location.href = '/'} 
+                className="px-8 py-3 bg-[#1A1C20] text-white rounded-xl font-bold border border-[#2A2D32] hover:bg-[#2A2D32] transition-colors"
+              >
+                Return Home
+              </button>
+            </div>
           </div>
         </div>
       );
@@ -77,34 +114,34 @@ function AppContent() {
     const fetchMatches = async () => {
       try {
         const response = await fetch('/api/matches');
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        
         const result = await response.json();
-        if (result.status === 'success' && result.data.length > 0) {
+        if (result.status === 'success' && Array.isArray(result.data) && result.data.length > 0) {
           const mappedMatches = result.data.slice(0, 6).map((m: any) => ({
-            id: m.id.toString(),
-            utcDate: m.utcDate,
-            status: m.status,
-            competition: m.competition.name,
+            id: m.id?.toString() || Math.random().toString(),
+            utcDate: m.utcDate || new Date().toISOString(),
+            status: m.status || 'SCHEDULED',
+            competition: m.competition?.name || 'Unknown League',
             venue: m.venue || 'TBD Stadium',
             homeTeam: {
-              id: m.homeTeam.id.toString(),
-              name: m.homeTeam.name,
-              logo: m.homeTeam.crest,
+              id: m.homeTeam?.id?.toString() || 'h-unknown',
+              name: m.homeTeam?.name || 'Home Team',
+              logo: m.homeTeam?.crest || 'https://picsum.photos/seed/home/100/100',
               lastFive: ['W', 'D', 'W', 'L', 'W'],
               xG: 1.8,
               players: [
-                { id: `h-${m.homeTeam.id}-p1`, name: 'Home Star', position: 'FW', rating: 8.2, status: 'available', goals: 10, assists: 4, form: 85 },
-                { id: `h-${m.homeTeam.id}-p2`, name: 'Home Wall', position: 'DF', rating: 7.9, status: 'available', goals: 0, assists: 1, form: 80 },
+                { id: `h-${m.homeTeam?.id || '0'}-p1`, name: 'Home Star', position: 'FW', rating: 8.2, status: 'available', goals: 10, assists: 4, form: 85 },
               ]
             },
             awayTeam: {
-              id: m.awayTeam.id.toString(),
-              name: m.awayTeam.name,
-              logo: m.awayTeam.crest,
+              id: m.awayTeam?.id?.toString() || 'a-unknown',
+              name: m.awayTeam?.name || 'Away Team',
+              logo: m.awayTeam?.crest || 'https://picsum.photos/seed/away/100/100',
               lastFive: ['D', 'L', 'W', 'W', 'D'],
               xG: 1.4,
               players: [
-                { id: `a-${m.awayTeam.id}-p1`, name: 'Away Ace', position: 'MF', rating: 8.0, status: 'available', goals: 5, assists: 8, form: 88 },
-                { id: `a-${m.awayTeam.id}-p2`, name: 'Away Keeper', position: 'GK', rating: 7.5, status: 'available', goals: 0, assists: 0, form: 75 },
+                { id: `a-${m.awayTeam?.id || '0'}-p1`, name: 'Away Ace', position: 'MF', rating: 8.0, status: 'available', goals: 5, assists: 8, form: 88 },
               ]
             },
             h2h: { homeWins: 5, awayWins: 3, draws: 2 },
@@ -112,10 +149,11 @@ function AppContent() {
           }));
           setMatches(mappedMatches);
         } else {
+          console.warn("No matches found in API, using mock data");
           setMatches(MOCK_MATCHES);
         }
       } catch (error) {
-        console.error("Failed to fetch matches:", error);
+        console.error("Failed to fetch matches, falling back to mock data:", error);
         setMatches(MOCK_MATCHES);
       } finally {
         setIsInitialLoading(false);
@@ -124,30 +162,42 @@ function AppContent() {
 
     fetchMatches();
 
-    // WebSocket connection for real-time scores
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const socket = new WebSocket(`${protocol}//${window.location.host}`);
-    
-    socket.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      if (data.type === 'score_update') {
-        setMatches(prevMatches => 
-          prevMatches.map(m => {
-            if (m.id === data.matchId) {
-              const updated = { ...m, score: data.score, status: 'LIVE' as any };
-              // Update selected match if it's the one being updated
-              setSelectedMatch(prev => prev?.id === data.matchId ? updated : prev);
-              return updated;
-            }
-            return m;
-          })
-        );
-      }
-    };
+    // WebSocket connection for real-time scores (disabled on Vercel)
+    const isVercel = window.location.hostname.includes('vercel.app');
+    let socket: WebSocket | null = null;
 
-    socket.onerror = (error) => {
-      console.warn('WebSocket error (Live scores disabled):', error);
-    };
+    if (!isVercel) {
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      try {
+        socket = new WebSocket(`${protocol}//${window.location.host}`);
+        
+        socket.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            if (data.type === 'score_update') {
+              setMatches(prevMatches => 
+                prevMatches.map(m => {
+                  if (m.id === data.matchId) {
+                    const updated = { ...m, score: data.score, status: 'LIVE' as any };
+                    setSelectedMatch(prev => prev?.id === data.matchId ? updated : prev);
+                    return updated;
+                  }
+                  return m;
+                })
+              );
+            }
+          } catch (e) {
+            console.warn('Failed to parse socket message:', e);
+          }
+        };
+
+        socket.onerror = (error) => {
+          console.warn('WebSocket error (Live scores disabled):', error);
+        };
+      } catch (e) {
+        console.warn('WebSocket initialization failed:', e);
+      }
+    }
 
     const testConnection = async () => {
       try {

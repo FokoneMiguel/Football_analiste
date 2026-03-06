@@ -57,7 +57,7 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match, prediction, onClick
         </div>
 
         <div className="flex flex-col items-center">
-          {match.score?.fullTime.home !== null ? (
+          {match.score?.fullTime?.home !== undefined && match.score?.fullTime?.home !== null ? (
             <div className="flex items-center gap-3">
               <span className="text-3xl font-mono font-bold text-white">{match.score.fullTime.home}</span>
               <span className="text-sm font-mono text-[#8E9299]">-</span>

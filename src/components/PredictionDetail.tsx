@@ -10,7 +10,15 @@ import { Shield, Target, TrendingUp, AlertTriangle, Brain, Zap, Info, MapPin, Lo
 import ReactMarkdown from 'react-markdown';
 import { GoogleGenAI } from "@google/genai";
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
+const getApiKey = () => {
+  try {
+    return process.env.GEMINI_API_KEY || "";
+  } catch {
+    return "";
+  }
+};
+
+const ai = new GoogleGenAI({ apiKey: getApiKey() });
 
 interface PredictionDetailProps {
   match: Match;
@@ -64,7 +72,7 @@ export const PredictionDetail: React.FC<PredictionDetailProps> = ({ match, predi
             <p className="text-sm text-[#8E9299] font-mono uppercase tracking-widest">
               {match.homeTeam.name} vs {match.awayTeam.name}
             </p>
-            {match.score?.fullTime.home !== null && (
+            {match.score?.fullTime?.home !== undefined && match.score?.fullTime?.home !== null && (
               <div className="px-3 py-1 bg-[#F27D26]/10 border border-[#F27D26]/20 rounded-lg">
                 <span className="text-sm font-mono font-bold text-[#F27D26]">
                   {match.score.fullTime.home} - {match.score.fullTime.away}
