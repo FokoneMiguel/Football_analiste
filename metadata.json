@@ -1,0 +1,9 @@
+{
+  "name": "GoalMind AI: Pro Football Analytics",
+  "description": "Professional-grade football match prediction and analytics platform powered by advanced AI ensemble models and real-time data.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone",
+    "geolocation"
+  ]
+}

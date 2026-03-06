@@ -1,0 +1,52 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "Stores user preferences and favorites",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "favorites": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "List of favorite match IDs"
+        }
+      },
+      "required": ["uid", "email"]
+    },
+    "Prediction": {
+      "title": "Match Prediction",
+      "description": "Stored AI generated predictions",
+      "type": "object",
+      "properties": {
+        "matchId": { "type": "string" },
+        "probabilities": {
+          "type": "object",
+          "properties": {
+            "homeWin": { "type": "number" },
+            "draw": { "type": "number" },
+            "awayWin": { "type": "number" }
+          }
+        },
+        "confidenceIndex": { "type": "number" },
+        "riskLevel": { "type": "string", "enum": ["low", "medium", "high"] },
+        "explanation": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["matchId", "probabilities"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile documents"
+    },
+    "/predictions/{predictionId}": {
+      "schema": "Prediction",
+      "description": "Cached match predictions"
+    }
+  }
+}
